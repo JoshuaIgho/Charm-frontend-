@@ -1,0 +1,16 @@
+// src/apolloClient.js
+import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
+
+const httpLink = new HttpLink({
+  uri: "http://localhost:4000/api/graphql", // Keystone GraphQL endpoint
+  credentials: "include", // needed if you use cookies/session auth
+});
+
+const client = new ApolloClient({
+  link: httpLink,
+  cache: new InMemoryCache(),
+});
+
+export default client;
+
+
