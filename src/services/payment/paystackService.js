@@ -1,7 +1,7 @@
 // Paystack Payment Service
 export const paystackService = {
   getPublicKey: () => {
-    return import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxx';
+    return import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
   },
 
   initializePayment: async (orderData) => {
