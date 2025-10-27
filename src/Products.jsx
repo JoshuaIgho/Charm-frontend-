@@ -16,6 +16,9 @@ import { CardSkeleton, InlineLoading } from "./components/common/Loading";
 import ProductCard from "./components/customer/ProductCard";
 import ProductFilters from "./components/customer/ProductFilters";
 
+// API URL configuration - uses environment variable or falls back to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+
 const ProductList = memo(() => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addToCart } = useCart();
@@ -63,12 +66,11 @@ const ProductList = memo(() => {
     });
 
     setSearchQuery(urlSearch);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [searchParams]);
 
   const productsPerPage = 12;
 
-  // Fixed sorting function to use available fields
   const getSortOption = useCallback((sortValue) => {
     const sortOptions = {
       newest: { id: "desc" },
@@ -83,12 +85,12 @@ const ProductList = memo(() => {
 
   // Load products with GraphQL
   const loadProducts = useCallback(async () => {
-    console.log("Loading products...");
+    console.log("Loading products from:", `${API_URL}/api/graphql`);
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:4000/api/graphql", {
+      const response = await fetch(`${API_URL}/api/graphql`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,7 +164,7 @@ const ProductList = memo(() => {
       try {
         console.log(`Updating product ${productId} stock to ${newStock}`);
 
-        const response = await fetch("http://localhost:4000/api/graphql", {
+        const response = await fetch(`${API_URL}/api/graphql`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -207,7 +209,6 @@ const ProductList = memo(() => {
       e.preventDefault();
       setCurrentPage(1);
 
-      // Update URL with search query
       const newParams = new URLSearchParams(searchParams);
       if (searchQuery) {
         newParams.set("search", searchQuery);
@@ -224,7 +225,6 @@ const ProductList = memo(() => {
       setFilters(newFilters);
       setCurrentPage(1);
 
-      // Update URL parameters
       const newParams = new URLSearchParams();
       if (newFilters.category) newParams.set("category", newFilters.category);
       if (newFilters.minPrice) newParams.set("minPrice", newFilters.minPrice);
@@ -250,10 +250,9 @@ const ProductList = memo(() => {
     });
     setSearchQuery("");
     setCurrentPage(1);
-    setSearchParams({}); // Clear all URL parameters
+    setSearchParams({});
   }, [setSearchParams]);
 
-  // Update a single product's stock in the products array
   const updateProductStock = useCallback((productId, newStock) => {
     console.log(
       `Updating local state for product ${productId} to stock ${newStock}`
@@ -518,93 +517,92 @@ const ProductList = memo(() => {
             </div>
           )}
 
+          <div className="lg:col-span-3">
+            {isLoading ? (
+              <div className={viewMode === 'grid' ? 'product-grid' : 'space-y-4'}>
+                <CardSkeleton count={productsPerPage} />
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Error Loading Products</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-6">{error}</p>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                  <button
+                    onClick={loadProducts}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 text-sm sm:text-base"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </button>
+                  <button
+                    onClick={clearFilters}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 text-sm sm:text-base"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            ) : products.length > 0 ? (
+              <>
+                <div className={viewMode === 'grid' ? 'product-grid' : 'space-y-4'}>
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      viewMode={viewMode}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ))}
+                </div>
 
-<div className="lg:col-span-3">
-  {isLoading ? (
-    <div className={viewMode === 'grid' ? 'product-grid' : 'space-y-4'}>
-      <CardSkeleton count={productsPerPage} />
-    </div>
-  ) : error ? (
-    <div className="text-center py-12">
-      <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-500 mx-auto mb-4" />
-      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Error Loading Products</h3>
-      <p className="text-sm sm:text-base text-gray-600 mb-6">{error}</p>
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-        <button
-          onClick={loadProducts}
-          className="inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 text-sm sm:text-base"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
-        </button>
-        <button
-          onClick={clearFilters}
-          className="inline-flex items-center justify-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 text-sm sm:text-base"
-        >
-          Clear Filters
-        </button>
-      </div>
-    </div>
-  ) : products.length > 0 ? (
-    <>
-      <div className={viewMode === 'grid' ? 'product-grid' : 'space-y-4'}>
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            viewMode={viewMode}
-            onAddToCart={handleAddToCart}
-          />
-        ))}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="mt-8 sm:mt-12 flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          {[...Array(totalPages)].map((_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm ${
-                currentPage === i + 1
-                  ? 'bg-primary-600 text-white border-primary-600'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-      )}
-    </>
-  ) : (
-    <div className="text-center py-12">
-      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No products found</h3>
-      <p className="text-sm sm:text-base text-gray-600 mb-6">
-        Try adjusting your search or filters.
-      </p>
-      <button
-        onClick={clearFilters}
-        className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm sm:text-base font-medium"
-      >
-        Clear filters
-      </button>
-    </div>
-  )}
-</div>
+                {totalPages > 1 && (
+                  <div className="mt-8 sm:mt-12 flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm ${
+                          currentPage === i + 1
+                            ? 'bg-primary-600 text-white border-primary-600'
+                            : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-6">
+                  Try adjusting your search or filters.
+                </p>
+                <button
+                  onClick={clearFilters}
+                  className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm sm:text-base font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
