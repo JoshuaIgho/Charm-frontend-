@@ -1,4 +1,6 @@
 // Stripe Payment Service
+const REST_API_URL = import.meta.env.VITE_REST_API_URL || 'http://localhost:4000';
+
 export const stripeService = {
   getPublicKey: () => {
     return import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
@@ -8,7 +10,8 @@ export const stripeService = {
     try {
       console.log('📤 Sending payment intent request:', orderData);
       
-      const response = await fetch('http://localhost:4000/api/payment/stripe/create-intent', {
+      // ✅ Correct REST endpoint
+      const response = await fetch(`${REST_API_URL}/api/payment/stripe/create-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +44,14 @@ export const stripeService = {
 
   confirmPayment: async (paymentIntentId) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/payment/stripe/confirm/${paymentIntentId}`);
+      // ✅ Correct REST endpoint
+      const response = await fetch(`${REST_API_URL}/api/payment/stripe/confirm/${paymentIntentId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to confirm payment');
+      }
+      
       const data = await response.json();
       return data;
     } catch (error) {

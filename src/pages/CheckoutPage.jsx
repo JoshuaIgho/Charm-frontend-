@@ -25,6 +25,8 @@ import orderService from "../services/orderService";
 import AddressService from "../services/addressService";
 import { paystackService } from "../services/payment/paystackService";
 import { stripeService } from "../services/payment/stripeService";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/graphql';
+
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -247,35 +249,36 @@ const CheckoutPage = () => {
   // Add this to your CheckoutPage.jsx - Replace the existing handlePaystackSuccess function
 
   const handlePaystackSuccess = async (reference) => {
-    console.log("\n🎉 ========================================");
-    console.log("🎉 PAYSTACK SUCCESS CALLBACK");
-    console.log("🎉 ========================================");
-    console.log("📋 Reference Object:", reference);
-    console.log("📋 Reference String:", reference.reference);
-    console.log("📋 Current Order:", currentOrder);
+  console.log('\n🎉 ========================================');
+  console.log('🎉 PAYSTACK SUCCESS CALLBACK');
+  console.log('🎉 ========================================');
+  console.log('📋 Reference Object:', reference);
+  console.log('📋 Reference String:', reference.reference);
+  console.log('📋 Current Order:', currentOrder);
 
-    try {
-      // Verify payment with backend
-      console.log("🔍 Step 1: Verifying payment...");
-      const verification = await paystackService.verifyPayment(
-        reference.reference
-      );
-      console.log("✅ Verification Response:", verification);
+  try {
+    // Step 1: Verify payment with backend
+    console.log('🔍 Step 1: Verifying payment...');
+    const verification = await paystackService.verifyPayment(reference.reference);
+    console.log('✅ Verification Response:', verification);
 
-      if (verification.success) {
-        console.log("💰 Payment Amount:", verification.data.amount);
-        console.log("📧 Customer Email:", verification.data.customer.email);
-        console.log("✅ Payment Status:", verification.data.status);
+    if (!verification.success) {
+      throw new Error(verification.message || 'Payment verification failed');
+    }
 
-        // Update order status
-        console.log("📝 Step 2: Updating order in database...");
-        const updateResponse = await fetch(
-          "http://localhost:4000/api/graphql",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              query: `mutation UpdateOrder($id: ID!, $data: OrderUpdateInput!) {
+    console.log('💰 Payment Amount:', verification.data.amount);
+    console.log('📧 Customer Email:', verification.data.customer.email);
+    console.log('✅ Payment Status:', verification.data.status);
+
+    // Step 2: Update order status in database
+    console.log('📝 Step 2: Updating order in database...');
+
+   const updateResponse = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          mutation UpdateOrder($id: ID!, $data: OrderUpdateInput!) {
             updateOrder(where: { id: $id }, data: $data) { 
               id 
               orderNumber
@@ -283,47 +286,54 @@ const CheckoutPage = () => {
               status
               paymentReference
             }
-          }`,
-              variables: {
-                id: currentOrder.id,
-                data: {
-                  paymentStatus: "paid",
-                  status: "confirmed",
-                  paymentReference: reference.reference,
-                },
+          }
+        `,
+        variables: {
+          id: currentOrder.id,
+          data: {
+            paymentStatus: 'paid',
+            status: 'confirmed',
+            paymentReference: reference.reference,
+          },
               },
             }),
           }
         );
 
-        const updateResult = await updateResponse.json();
-        console.log("✅ Order Update Response:", updateResult);
+       const updateResult = await updateResponse.json();
+    console.log('✅ Order Update Response:', updateResult);
 
-        if (updateResult.errors) {
-          console.error("❌ GraphQL Errors:", updateResult.errors);
-          throw new Error(updateResult.errors[0].message);
-        }
-
-        console.log(
-          "🎊 Step 3: Payment complete! Clearing cart and redirecting..."
-        );
-        clearCart();
-        toast.success("Payment successful! 🎉");
-        navigate(`/order-confirmation/${currentOrder.id}`);
-      } else {
-        console.error("❌ Payment verification failed:", verification);
-        toast.error(verification.message || "Payment verification failed");
-      }
-    } catch (error) {
-      console.error("💥 ERROR IN PAYSTACK SUCCESS HANDLER");
-      console.error("Error:", error);
-      console.error("Error Message:", error.message);
-      console.error("Error Stack:", error.stack);
-      toast.error("Payment verification failed: " + error.message);
+    if (updateResult.errors) {
+      console.error('❌ GraphQL Errors:', updateResult.errors);
+      throw new Error(updateResult.errors[0].message);
     }
 
-    console.log("🎉 ========================================\n");
-  };
+    // Step 3: Clear cart BEFORE navigation
+    console.log('🧹 Step 3: Clearing cart...');
+    clearCart();
+    localStorage.removeItem('cart');
+    sessionStorage.removeItem('cart');
+    console.log('✅ Cart cleared successfully');
+
+    // Step 4: Show success message
+    console.log('🎊 Step 4: Payment complete! Redirecting...');
+    toast.success('Payment successful! 🎉');
+    
+    // Step 5: Navigate to confirmation page
+    navigate(`/order-confirmation/${currentOrder.id}`);
+    
+  } catch (error) {
+    console.error('💥 ERROR IN PAYSTACK SUCCESS HANDLER');
+    console.error('Error:', error);
+    console.error('Error Message:', error.message);
+    console.error('Error Stack:', error.stack);
+    
+    toast.error('Payment verification failed: ' + error.message);
+    setIsProcessing(false);
+  }
+
+  console.log('🎉 ========================================\n');
+};
 
   // Paystack close handler
   const handlePaystackClose = () => {
@@ -338,7 +348,7 @@ const CheckoutPage = () => {
     toast.success("Payment successful!");
     navigate(`/order-confirmation/${currentOrder.id}`);
   };
-  if (!isLoaded) {
+  if (!isLoaded) {  
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -427,7 +437,7 @@ const StripePaymentForm = ({ clientSecret, onSuccess, onClose }) => {
         console.log('✅ Payment succeeded!');
         
         // Update order in database
-        const updateResponse = await fetch('http://localhost:4000/api/graphql', {
+        const updateResponse =  await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
