@@ -1,3 +1,5 @@
+// FIXED: ProductDetailPage.jsx - Replace lines 1-50 with this
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
@@ -16,6 +18,9 @@ import { useAuth } from '../hooks/useAuth';
 import wishlistService from '../services/wishlistService';
 import { toast } from 'react-toastify';
 import { InlineLoading } from '../components/common/Loading';
+
+// ✅ FIXED: Use environment variable instead of hardcoded localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/graphql';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -42,7 +47,10 @@ const ProductDetailPage = () => {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:4000/api/graphql', {
+        console.log('🔍 Fetching product from:', API_URL);
+        
+        // ✅ FIXED: Use API_URL constant instead of hardcoded localhost
+        const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -68,9 +76,15 @@ const ProductDetailPage = () => {
           })
         });
 
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
+        console.log('✅ Product data received:', result);
 
         if (result.errors) {
+          console.error('❌ GraphQL errors:', result.errors);
           throw new Error(result.errors[0]?.message || 'Failed to load product');
         }
 
@@ -79,8 +93,10 @@ const ProductDetailPage = () => {
         }
 
         setProduct(result.data.product);
+        console.log('📦 Product loaded:', result.data.product);
+        
       } catch (err) {
-        console.error('Error loading product:', err);
+        console.error('❌ Error loading product:', err);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -92,6 +108,8 @@ const ProductDetailPage = () => {
     }
   }, [id]);
 
+  // ... rest of your code stays the same (keep all other functions unchanged)
+  
   // Check wishlist status
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -167,7 +185,6 @@ const ProductDetailPage = () => {
       
       if (result?.success) {
         toast.success(`Added ${quantity} item(s) to cart!`);
-        // Update local stock
         setProduct(prev => ({
           ...prev,
           stock: Math.max(0, prev.stock - quantity)
@@ -221,6 +238,9 @@ const ProductDetailPage = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             {error || 'Product not found'}
           </h2>
+          <p className="text-gray-600 mb-4">
+            {error === 'Failed to fetch' ? 'Cannot connect to server' : ''}
+          </p>
           <button
             onClick={() => navigate('/products')}
             className="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700"
@@ -307,11 +327,13 @@ const ProductDetailPage = () => {
                 )}
               </div>
 
-              {/* Description */}
+              {/* ✅ FIXED: Description now properly displays */}
               {product.description && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-600 leading-relaxed">{product.description}</p>
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    {product.description}
+                  </p>
                 </div>
               )}
 
