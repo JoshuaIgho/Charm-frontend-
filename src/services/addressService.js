@@ -1,5 +1,5 @@
 // src/services/addressService.js
-const API_URL = 'http://localhost:4000/api/graphql';
+import { API_URL } from '../services/api';
 
 const GET_USER_ADDRESSES = `
   query GetUserAddresses($userId: ID!) {
