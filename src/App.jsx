@@ -30,8 +30,8 @@ import Footer from "./components/common/Footer";
 import AddProductPage from "./components/admin/AddProductPage";
 import AdminProductsPage from "./components/admin/AdminProductsPage";
 
-// Import the new styled pages at the top of App.jsx
-import SignInPage from "./components/auth/SignInPage"; // Create this file
+// Import the new styled pages
+import SignInPage from "./components/auth/SignInPage";
 import SignUpPage from "./components/auth/SignUpPage";
 
 // Pages
@@ -51,6 +51,9 @@ import AboutPage from "./pages/AboutPage";
 // Global Styles
 import "./styles/globals.css";
 import "./style.css";
+import checkBackendHealth from './utils/backendHealthCheck';
+import useKeepAlive from './hooks/useKeepAlive';
+
 
 // ---------------- ADMIN LOGIN ----------------
 function AdminLogin({ handleSuccess }) {
@@ -147,6 +150,7 @@ function AppRoutes({ isAuthenticated, setIsAuthenticated, user, setUser }) {
         {/* Clerk Auth */}
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
+        
         {/* User Dashboard (Clerk Protected) */}
         <Route
           path="/dashboard"
@@ -175,6 +179,7 @@ function AppRoutes({ isAuthenticated, setIsAuthenticated, user, setUser }) {
             </SignedIn>
           }
         />
+        
         <Route
           path="/settings"
           element={
@@ -193,6 +198,7 @@ function AppRoutes({ isAuthenticated, setIsAuthenticated, user, setUser }) {
             </SignedIn>
           }
         />
+        
         <Route
           path="/order-confirmation/:orderId"
           element={
@@ -244,19 +250,58 @@ function AppRoutes({ isAuthenticated, setIsAuthenticated, user, setUser }) {
   );
 }
 
+// ---------------- MAIN APP COMPONENT ----------------
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [backendStatus, setBackendStatus] = useState({
+    checking: true,
+    ready: false,
+    error: null
+  });
+  useKeepAlive(10);
   // ✅ Get both user data and auth from Clerk
   const { isSignedIn, user: clerkUser, isLoaded } = useUser();
 
-  // ✅ Sync Clerk → Keystone when user signs in
+  // ✅ Wake up backend on app load (FIRST PRIORITY)
+  useEffect(() => {
+    const wakeBackend = async () => {
+      console.log('🚀 Waking up backend...');
+      setBackendStatus({ checking: true, ready: false, error: null });
+
+      try {
+        const health = await checkBackendHealth(true);
+        
+        if (health.ready) {
+          console.log('✅ Backend is ready!');
+          setBackendStatus({ checking: false, ready: true, error: null });
+        } else {
+          console.warn('⚠️ Backend not ready:', health.error);
+          setBackendStatus({ 
+            checking: false, 
+            ready: false, 
+            error: health.error || 'Backend is not available'
+          });
+        }
+      } catch (error) {
+        console.error('❌ Failed to wake backend:', error);
+        setBackendStatus({ 
+          checking: false, 
+          ready: false, 
+          error: error.message 
+        });
+      }
+    };
+
+    wakeBackend();
+  }, []);
+
+  // ✅ Sync Clerk → Keystone when user signs in (AFTER BACKEND IS READY)
   useEffect(() => {
     const handleUserSync = async () => {
-      // Wait for Clerk to load
-      if (!isLoaded) return;
+      // Wait for both Clerk AND backend to be ready
+      if (!isLoaded || !backendStatus.ready) return;
 
       // Only sync if user is signed in and we have user data
       if (isSignedIn && clerkUser) {
@@ -278,16 +323,17 @@ function App() {
 
           // Sync with Keystone
           await syncUser(userData);
-          console.log("User sync completed successfully");
+          console.log("✅ User sync completed successfully");
         } catch (error) {
-          console.error("Failed to sync user:", error);
+          console.error("❌ Failed to sync user:", error);
         }
       }
     };
 
     handleUserSync();
-  }, [isLoaded, isSignedIn, clerkUser]);
+  }, [isLoaded, isSignedIn, clerkUser, backendStatus.ready]);
 
+  
   // ✅ Restore Admin session
   useEffect(() => {
     const savedUser = localStorage.getItem("adminUser");
@@ -298,6 +344,112 @@ function App() {
     setIsLoading(false);
   }, []);
 
+  // Show loading screen while backend is waking up
+  if (backendStatus.checking) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '20px',
+        textAlign: 'center',
+        background: '#f9fafb'
+      }}>
+        <div style={{
+          width: '60px',
+          height: '60px',
+          border: '5px solid #e5e7eb',
+          borderTop: '5px solid #3b82f6',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <h2 style={{ 
+          marginTop: '24px', 
+          fontSize: '24px', 
+          fontWeight: '600',
+          color: '#111827' 
+        }}>
+          Waking up backend...
+        </h2>
+        <p style={{ 
+          color: '#6b7280', 
+          maxWidth: '500px',
+          marginTop: '12px',
+          lineHeight: '1.6'
+        }}>
+          Our backend is hosted on Render's free tier and may take 30-60 seconds 
+          to wake up from sleep. Thank you for your patience! ☕
+        </p>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Show error screen if backend failed to wake up
+  if (!backendStatus.ready && backendStatus.error) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '20px',
+        textAlign: 'center',
+        background: '#f9fafb'
+      }}>
+        <div style={{ 
+          fontSize: '48px', 
+          marginBottom: '16px' 
+        }}>
+          ⚠️
+        </div>
+        <h2 style={{ 
+          color: '#dc2626',
+          fontSize: '24px',
+          fontWeight: '600',
+          marginBottom: '12px'
+        }}>
+          Backend Connection Failed
+        </h2>
+        <p style={{ 
+          color: '#6b7280', 
+          maxWidth: '500px', 
+          margin: '0 0 24px 0',
+          lineHeight: '1.6'
+        }}>
+          {backendStatus.error}
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '12px 32px',
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: '500',
+            transition: 'background 0.2s'
+          }}
+          onMouseOver={(e) => e.target.style.background = '#2563eb'}
+          onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
+
+  // Show app loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -306,6 +458,7 @@ function App() {
     );
   }
 
+  // Main app render
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <AuthProvider>

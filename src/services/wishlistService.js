@@ -1,5 +1,4 @@
-// src/services/wishlistService.js
-import { API_URL } from '../services/api'; // ✅ Add this import
+import { API_URL } from '../services/api';
 
 const GET_USER_WISHLIST = `
   query GetUserWishlist($userId: ID!) {
