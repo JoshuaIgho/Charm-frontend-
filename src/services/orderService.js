@@ -1,5 +1,5 @@
 // src/services/orderService.js
-const API_URL = 'http://localhost:4000/api/graphql';
+import { API_URL } from '../services/api';
 
 // GraphQL mutations and queries matching the new schema
 const CREATE_ORDER_MUTATION = `
