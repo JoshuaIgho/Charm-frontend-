@@ -3,6 +3,8 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { toast } from 'react-toastify';
 import authService from '../services/authService';
+import { API_URL } from '../services/api';
+
 
 const AuthContext = createContext(null);
 
@@ -38,7 +40,7 @@ export const AuthProvider = ({ children }) => {
           }
         `;
 
-        const response = await fetch('http://localhost:4000/api/graphql', {
+        const response = await fetch(API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

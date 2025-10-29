@@ -27,7 +27,7 @@ const SignUpPage = () => {
             <div className="text-left">
               <span className="block font-black">Charmé</span>
               <span className="block text-[10px] text-gray-600 font-semibold tracking-widest uppercase">
-                For the T-Girlies
+                For the C-Girlies
               </span>
             </div>
           </Link>

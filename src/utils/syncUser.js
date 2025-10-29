@@ -1,4 +1,5 @@
 // syncUser.js
+import { API_URL } from '../services/api';
 const CHECK_USER_BY_CLERK_ID = `
   query CheckUserByClerkId($clerkId: String!) {
     users(where: { clerkId: { equals: $clerkId } }) {
@@ -54,7 +55,7 @@ async function syncUser(userData) {
     }
     
     // 1. Check if user exists by clerkId
-    const checkByClerkIdResponse = await fetch('http://localhost:4000/api/graphql', {
+    const checkByClerkIdResponse = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -82,7 +83,7 @@ async function syncUser(userData) {
     }
 
     // 3. Check if user exists by email (may exist without clerkId)
-    const checkByEmailResponse = await fetch('http://localhost:4000/api/graphql', {
+    const checkByEmailResponse = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ async function syncUser(userData) {
       const existingUser = emailResult.data.users[0];
       console.log('User found by email, updating with clerkId...');
       
-      const updateResponse = await fetch('http://localhost:4000/api/graphql', {
+      const updateResponse = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +141,7 @@ async function syncUser(userData) {
     // 5. User doesn't exist at all, create new user
     console.log('User not found, creating new user...');
     
-    const createResponse = await fetch('http://localhost:4000/api/graphql', {
+    const createResponse = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

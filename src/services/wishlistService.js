@@ -1,5 +1,5 @@
 // src/services/wishlistService.js
-const API_URL = 'http://localhost:4000/api/graphql';
+import { API_URL } from '../services/api'; // ✅ Add this import
 
 const GET_USER_WISHLIST = `
   query GetUserWishlist($userId: ID!) {

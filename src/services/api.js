@@ -1,8 +1,14 @@
 import axios from 'axios';
 
-// Create axios instance with default config
+// ✅ GraphQL API URL for Keystone backend
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/graphql';
+
+// ✅ REST API URL (if you have REST endpoints)
+const REST_API_URL = import.meta.env.VITE_REST_API_URL || 'http://localhost:4000';
+
+// Create axios instance with default config for REST endpoints
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: REST_API_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
@@ -115,7 +121,7 @@ api.interceptors.response.use(
   }
 );
 
-// Generic API methods
+// Generic API methods for REST endpoints
 const apiService = {
   get: async (url, config = {}) => {
     try {
