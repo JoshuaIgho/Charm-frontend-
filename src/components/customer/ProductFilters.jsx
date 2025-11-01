@@ -5,7 +5,6 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
   const [expandedSections, setExpandedSections] = useState({
     category: true,
     price: true,
-    material: true,
     features: true
   });
 
@@ -50,24 +49,14 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
     onFiltersChange(newFilters);
   };
 
+  // ✅ FIXED: Match schema's categoryType field options
   const categories = [
     { value: 'rings', label: 'Rings' },
     { value: 'necklaces', label: 'Necklaces' },
     { value: 'earrings', label: 'Earrings' },
     { value: 'bracelets', label: 'Bracelets' },
-    { value: 'pendants', label: 'Pendants' },
-    { value: 'chains', label: 'Chains' },
     { value: 'anklets', label: 'Anklets' },
-    { value: 'sets', label: 'Jewelry Sets' }
-  ];
-
-  const materials = [
-    { value: 'gold', label: 'Gold' },
-    { value: 'silver', label: 'Silver' },
-    { value: 'platinum', label: 'Platinum' },
-    { value: 'stainless-steel', label: 'Stainless Steel' },
-    { value: 'copper', label: 'Copper' },
-    { value: 'mixed', label: 'Mixed Materials' }
+    { value: 'accessories', label: 'Accessories' }
   ];
 
   const priceRanges = [
@@ -75,7 +64,7 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
     { min: 10000, max: 25000, label: '₦10,000 - ₦25,000' },
     { min: 25000, max: 50000, label: '₦25,000 - ₦50,000' },
     { min: 50000, max: 100000, label: '₦50,000 - ₦100,000' },
-    { min: 100000, max: null, label: 'Above ₦100,000' }
+    { min: 100000, max: '', label: 'Above ₦100,000' } // ✅ Use empty string instead of null
   ];
 
   const hasActiveFilters = Object.values(localFilters).some(value => 
@@ -123,14 +112,14 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
         >
           <div className="space-y-3">
             {categories.map((category) => (
-              <label key={category.value} className="flex items-center">
+              <label key={category.value} className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   name="category"
                   value={category.value}
                   checked={localFilters.category === category.value}
                   onChange={(e) => handleFilterChange('category', e.target.value)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 cursor-pointer"
                 />
                 <span className="ml-3 text-sm text-gray-700">{category.label}</span>
               </label>
@@ -156,19 +145,19 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
             {/* Quick Price Ranges */}
             <div className="space-y-2">
               {priceRanges.map((range, index) => (
-                <label key={index} className="flex items-center">
+                <label key={index} className="flex items-center cursor-pointer">
                   <input
                     type="radio"
                     name="priceRange"
                     checked={
                       localFilters.minPrice == range.min && 
-                      (range.max === null ? localFilters.maxPrice === '' : localFilters.maxPrice == range.max)
+                      localFilters.maxPrice == range.max
                     }
                     onChange={() => {
                       handlePriceChange('min', range.min.toString());
-                      handlePriceChange('max', range.max ? range.max.toString() : '');
+                      handlePriceChange('max', range.max.toString());
                     }}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 cursor-pointer"
                   />
                   <span className="ml-3 text-sm text-gray-700">{range.label}</span>
                 </label>
@@ -204,60 +193,29 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
           </div>
         </FilterSection>
 
-        {/* Material */}
-        <FilterSection
-          title="Material"
-          isExpanded={expandedSections.material}
-          onToggle={() => toggleSection('material')}
-        >
-          <div className="space-y-3">
-            {materials.map((material) => (
-              <label key={material.value} className="flex items-center">
-                <input
-                  type="radio"
-                  name="material"
-                  value={material.value}
-                  checked={localFilters.material === material.value}
-                  onChange={(e) => handleFilterChange('material', e.target.value)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                />
-                <span className="ml-3 text-sm text-gray-700">{material.label}</span>
-              </label>
-            ))}
-            {localFilters.material && (
-              <button
-                onClick={() => handleFilterChange('material', '')}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Show All Materials
-              </button>
-            )}
-          </div>
-        </FilterSection>
-
-        {/* Special Features */}
+        {/* Special Features - ✅ FIXED: Use correct field names */}
         <FilterSection
           title="Special Features"
           isExpanded={expandedSections.features}
           onToggle={() => toggleSection('features')}
         >
           <div className="space-y-3">
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={localFilters.onSale}
-                onChange={(e) => handleFilterChange('onSale', e.target.checked)}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                checked={localFilters.isOnSale || false}
+                onChange={(e) => handleFilterChange('isOnSale', e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer"
               />
               <span className="ml-3 text-sm text-gray-700">On Sale</span>
             </label>
             
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={localFilters.newArrivals}
-                onChange={(e) => handleFilterChange('newArrivals', e.target.checked)}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                checked={localFilters.isNewStock || false}
+                onChange={(e) => handleFilterChange('isNewStock', e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer"
               />
               <span className="ml-3 text-sm text-gray-700">New Arrivals</span>
             </label>
@@ -282,18 +240,6 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
               </span>
             )}
             
-            {localFilters.material && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 rounded-md text-sm">
-                {materials.find(m => m.value === localFilters.material)?.label}
-                <button
-                  onClick={() => handleFilterChange('material', '')}
-                  className="hover:text-primary-900"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-            
             {(localFilters.minPrice || localFilters.maxPrice) && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 rounded-md text-sm">
                 ₦{localFilters.minPrice || '0'} - ₦{localFilters.maxPrice || '∞'}
@@ -309,11 +255,11 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
               </span>
             )}
             
-            {localFilters.onSale && (
+            {localFilters.isOnSale && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 rounded-md text-sm">
                 On Sale
                 <button
-                  onClick={() => handleFilterChange('onSale', false)}
+                  onClick={() => handleFilterChange('isOnSale', false)}
                   className="hover:text-primary-900"
                 >
                   <X className="h-3 w-3" />
@@ -321,11 +267,11 @@ const ProductFilters = ({ filters, onFiltersChange, onClearFilters }) => {
               </span>
             )}
             
-            {localFilters.newArrivals && (
+            {localFilters.isNewStock && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 rounded-md text-sm">
                 New Arrivals
                 <button
-                  onClick={() => handleFilterChange('newArrivals', false)}
+                  onClick={() => handleFilterChange('isNewStock', false)}
                   className="hover:text-primary-900"
                 >
                   <X className="h-3 w-3" />

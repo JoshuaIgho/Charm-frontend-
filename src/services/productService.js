@@ -1,186 +1,200 @@
-import apiService from './api';
+// productService.js - CLEAN WORKING VERSION
+
+// ✅ Import API_URL from your config
+import { API_URL } from './api';
+
+// ✅ Properly extract the base URL
+const getBaseUrl = (url) => {
+  if (url.endsWith('/api/graphql')) {
+    return url.replace('/api/graphql', '');
+  }
+  if (url.endsWith('/graphql')) {
+    return url.replace('/graphql', '');
+  }
+  return url;
+};
+
+const BASE_URL = getBaseUrl(API_URL);
+
+console.log('🔧 Configured URLs:', {
+  'Original API_URL': API_URL,
+  'BASE_URL for REST': BASE_URL,
+});
 
 const productService = {
-  // PUBLIC PRODUCT METHODS (accessible without authentication)
+  // ========================================
+  // WORKING METHODS (Routes exist in keystone.ts)
+  // ========================================
 
-  // Get all products with filtering and pagination
-  getProducts: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await apiService.get(`/products?${queryString}`);
-  },
-
-  // Get single product by ID
-  getProduct: async (id) => {
-    return await apiService.get(`/products/${id}`);
-  },
-
-  // Get product by slug
-  getProductBySlug: async (slug) => {
-    return await apiService.get(`/products/slug/${slug}`);
-  },
-
-  // Get featured products
+  // ✅ Get featured products
   getFeaturedProducts: async (limit = 8) => {
-    return await apiService.get(`/products/featured?limit=${limit}`);
+    try {
+      const url = `${BASE_URL}/api/products/featured?limit=${limit}`;
+      console.log(`🔍 Calling: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        console.error('❌ Expected JSON but got:', contentType);
+        const text = await response.text();
+        console.error('Response preview:', text.substring(0, 200));
+        throw new Error('Server returned non-JSON response');
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ API Error Response:', errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch featured products`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Featured products response:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ Featured products error:', error);
+      return { success: false, error: error.message };
+    }
   },
 
-  // Get new arrivals
+  // ✅ Get new arrivals
   getNewArrivals: async (limit = 8) => {
-    return await apiService.get(`/products/new-arrivals?limit=${limit}`);
+    try {
+      const url = `${BASE_URL}/api/products/new-arrivals?limit=${limit}`;
+      console.log(`🆕 Calling: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        console.error('❌ Expected JSON but got:', contentType);
+        const text = await response.text();
+        console.error('Response preview:', text.substring(0, 200));
+        throw new Error('Server returned non-JSON response');
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ API Error Response:', errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch new arrivals`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ New arrivals response:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ New arrivals error:', error);
+      return { success: false, error: error.message };
+    }
   },
 
-  // Get products by category
+  // ✅ Get all products (exists in keystone.ts)
+  getProducts: async (limit = 20, category = null, isNew = false) => {
+    try {
+      let url = `${BASE_URL}/api/products?limit=${limit}`;
+      if (category) url += `&category=${category}`;
+      if (isNew) url += `&new=true`;
+      
+      console.log(`📦 Calling: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Failed to fetch products`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Products response:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ Products error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // ========================================
+  // PLACEHOLDER METHODS (Need backend routes)
+  // ========================================
+  
+  // These will be implemented when you create the backend routes
+  
+  getProduct: async (id) => {
+    console.warn('⚠️ getProduct not implemented yet');
+    return { success: false, error: 'Not implemented' };
+  },
+
+  getProductBySlug: async (slug) => {
+    console.warn('⚠️ getProductBySlug not implemented yet');
+    return { success: false, error: 'Not implemented' };
+  },
+
   getProductsByCategory: async (category, params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await apiService.get(`/products/category/${category}?${queryString}`);
+    console.warn('⚠️ getProductsByCategory not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Search products
   searchProducts: async (query, params = {}) => {
-    const searchParams = { ...params, search: query };
-    const queryString = new URLSearchParams(searchParams).toString();
-    return await apiService.get(`/products/search?${queryString}`);
+    console.warn('⚠️ searchProducts not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Get product categories
   getCategories: async () => {
-    return await apiService.get('/products/categories');
+    console.warn('⚠️ getCategories not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Get related products
   getRelatedProducts: async (productId, limit = 4) => {
-    return await apiService.get(`/products/${productId}/related?limit=${limit}`);
+    console.warn('⚠️ getRelatedProducts not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // ADMIN PRODUCT METHODS (require admin authentication)
-
-  // Create new product
   createProduct: async (productData) => {
-    return await apiService.post('/products', productData);
+    console.warn('⚠️ createProduct not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Update product
   updateProduct: async (id, productData) => {
-    return await apiService.put(`/products/${id}`, productData);
+    console.warn('⚠️ updateProduct not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Delete product
   deleteProduct: async (id) => {
-    return await apiService.delete(`/products/${id}`);
+    console.warn('⚠️ deleteProduct not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Upload product images
   uploadProductImages: async (productId, formData, onUploadProgress) => {
-    return await apiService.upload(
-      `/products/${productId}/images`, 
-      formData, 
-      onUploadProgress
-    );
+    console.warn('⚠️ uploadProductImages not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Delete product image
   deleteProductImage: async (productId, imageId) => {
-    return await apiService.delete(`/products/${productId}/images/${imageId}`);
+    console.warn('⚠️ deleteProductImage not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
 
-  // Update stock
   updateStock: async (id, stockData) => {
-    return await apiService.patch(`/products/${id}/stock`, stockData);
+    console.warn('⚠️ updateStock not implemented yet');
+    return { success: false, error: 'Not implemented' };
   },
-
-  // Bulk update products
-  bulkUpdateProducts: async (updates) => {
-    return await apiService.patch('/products/bulk-update', { updates });
-  },
-
-  // Get admin products (includes inactive products)
-  getAdminProducts: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await apiService.get(`/admin/products?${queryString}`);
-  },
-
-  // Get low stock products
-  getLowStockProducts: async () => {
-    return await apiService.get('/admin/products/low-stock');
-  },
-
-  // Get product analytics
-  getProductAnalytics: async (id, dateRange) => {
-    const params = dateRange ? `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}` : '';
-    return await apiService.get(`/admin/products/${id}/analytics${params}`);
-  },
-
-  // INVENTORY MANAGEMENT
-
-  // Reserve stock (for cart items)
-  reserveStock: async (productId, quantity) => {
-    return await apiService.post(`/products/${productId}/reserve`, { quantity });
-  },
-
-  // Release reserved stock
-  releaseStock: async (productId, quantity) => {
-    return await apiService.post(`/products/${productId}/release`, { quantity });
-  },
-
-  // Check stock availability
-  checkAvailability: async (items) => {
-    return await apiService.post('/products/check-availability', { items });
-  },
-
-  // PRODUCT REVIEWS (if implementing reviews)
-
-  // Get product reviews
-  getProductReviews: async (productId, params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await apiService.get(`/products/${productId}/reviews?${queryString}`);
-  },
-
-  // Add product review
-  addReview: async (productId, reviewData) => {
-    return await apiService.post(`/products/${productId}/reviews`, reviewData);
-  },
-
-  // Update review
-  updateReview: async (productId, reviewId, reviewData) => {
-    return await apiService.put(`/products/${productId}/reviews/${reviewId}`, reviewData);
-  },
-
-  // Delete review
-  deleteReview: async (productId, reviewId) => {
-    return await apiService.delete(`/products/${productId}/reviews/${reviewId}`);
-  },
-
-  // UTILITY METHODS
-
-  // Get product filters
-  getFilters: async () => {
-    return await apiService.get('/products/filters');
-  },
-
-  // Get product statistics for dashboard
-  getProductStats: async (dateRange = null) => {
-    const params = dateRange ? `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}` : '';
-    return await apiService.get(`/admin/products/stats${params}`);
-  },
-
-  // Generate product report
-  generateReport: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await apiService.download(`/admin/products/report?${queryString}`, 'products-report.xlsx');
-  },
-
-  // Import products from CSV/Excel
-  importProducts: async (file, onUploadProgress) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return await apiService.upload('/admin/products/import', formData, onUploadProgress);
-  },
-
-  // Export products to CSV/Excel
-  exportProducts: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await apiService.download(`/admin/products/export?${queryString}`, 'products.xlsx');
-  }
 };
 
 export default productService;

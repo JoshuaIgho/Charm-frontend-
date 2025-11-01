@@ -1,5 +1,3 @@
-// FIXED: ProductDetailPage.jsx - Replace lines 1-50 with this
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
@@ -19,7 +17,6 @@ import wishlistService from '../services/wishlistService';
 import { toast } from 'react-toastify';
 import { InlineLoading } from '../components/common/Loading';
 
-// ✅ FIXED: Use environment variable instead of hardcoded localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/graphql';
 
 const ProductDetailPage = () => {
@@ -49,7 +46,6 @@ const ProductDetailPage = () => {
       try {
         console.log('🔍 Fetching product from:', API_URL);
         
-        // ✅ FIXED: Use API_URL constant instead of hardcoded localhost
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -61,14 +57,17 @@ const ProductDetailPage = () => {
                   name
                   description
                   price
+                  originalPrice
                   stock
                   image {
                     url
                   }
-                  category {
-                    id
-                    name
-                  }
+                  categoryType
+                  isOnSale
+                  isNewStock
+                  isFeatured
+                  averageRating
+                  totalReviews
                 }
               }
             `,
@@ -107,8 +106,6 @@ const ProductDetailPage = () => {
       loadProduct();
     }
   }, [id]);
-
-  // ... rest of your code stays the same (keep all other functions unchanged)
   
   // Check wishlist status
   useEffect(() => {
@@ -172,6 +169,7 @@ const ProductDetailPage = () => {
     }
   };
 
+  // ✅ FIXED: Stock remains unchanged when adding to cart
   const handleAddToCart = async () => {
     if (!product || product.stock <= 0) {
       toast.error('Product is out of stock');
@@ -185,10 +183,7 @@ const ProductDetailPage = () => {
       
       if (result?.success) {
         toast.success(`Added ${quantity} item(s) to cart!`);
-        setProduct(prev => ({
-          ...prev,
-          stock: Math.max(0, prev.stock - quantity)
-        }));
+        // ✅ Stock is NOT reduced here - only on confirmed purchase
         setQuantity(1);
       } else {
         toast.error(result?.message || 'Failed to add to cart');
@@ -264,14 +259,14 @@ const ProductDetailPage = () => {
           <Link to="/" className="hover:text-primary-600">Home</Link>
           <span>/</span>
           <Link to="/products" className="hover:text-primary-600">Products</Link>
-          {product.category && (
+          {product.categoryType && (
             <>
               <span>/</span>
               <Link 
-                to={`/products?category=${product.category.name}`}
+                to={`/products?category=${product.categoryType}`}
                 className="hover:text-primary-600 capitalize"
               >
-                {product.category.name}
+                {product.categoryType}
               </Link>
             </>
           )}
@@ -291,14 +286,33 @@ const ProductDetailPage = () => {
                 />
               </div>
             </div>
+            
+            {/* Badges */}
+            <div className="flex gap-2">
+              {product.isOnSale && (
+                <span className="px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-full">
+                  SALE
+                </span>
+              )}
+              {product.isNewStock && (
+                <span className="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-full">
+                  NEW
+                </span>
+              )}
+              {product.isFeatured && (
+                <span className="px-3 py-1 bg-yellow-500 text-white text-sm font-semibold rounded-full">
+                  FEATURED
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Product Info */}
           <div>
             <div className="bg-white rounded-xl shadow-sm p-8">
-              {product.category && (
+              {product.categoryType && (
                 <p className="text-sm text-primary-600 font-medium mb-2 uppercase tracking-wide">
-                  {product.category.name}
+                  {product.categoryType}
                 </p>
               )}
               
@@ -306,9 +320,37 @@ const ProductDetailPage = () => {
                 {product.name}
               </h1>
 
+              {/* Rating */}
+              {product.totalReviews > 0 && (
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-5 w-5 ${
+                          i < Math.floor(product.averageRating)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {product.averageRating.toFixed(1)} ({product.totalReviews} reviews)
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center gap-4 mb-6">
-                <div className="text-4xl font-bold text-primary-600">
-                  {formatPrice(product.price)}
+                <div className="flex items-center gap-2">
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <div className="text-2xl text-gray-400 line-through">
+                      {formatPrice(product.originalPrice)}
+                    </div>
+                  )}
+                  <div className="text-4xl font-bold text-primary-600">
+                    {formatPrice(product.price)}
+                  </div>
                 </div>
                 
                 {/* Stock Badge */}
@@ -322,12 +364,12 @@ const ProductDetailPage = () => {
                   </span>
                 ) : (
                   <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-                    In Stock
+                    In Stock ({product.stock} available)
                   </span>
                 )}
               </div>
 
-              {/* ✅ FIXED: Description now properly displays */}
+              {/* Description */}
               {product.description && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-900 mb-2">Description</h3>

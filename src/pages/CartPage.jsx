@@ -16,17 +16,16 @@ const CartPage = () => {
   const navigate = useNavigate();
 
   // Calculate cart totals
-  const { subtotal, shipping, tax, total } = useMemo(() => {
+  const { subtotal, shipping, total } = useMemo(() => {
     const subtotal = cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
     
     const shipping = subtotal > 50000 ? 0 : 2500; // Free shipping over ₦50,000
-    const tax = subtotal * 0.075; // 7.5% VAT
-    const total = subtotal + shipping + tax;
+    const total = subtotal + shipping;
     
-    return { subtotal, shipping, tax, total };
+    return { subtotal, shipping, total };
   }, [cartItems]);
 
   // Handle quantity change
@@ -229,10 +228,7 @@ const CartPage = () => {
                   {shipping === 0 ? 'FREE' : `₦${shipping.toLocaleString()}`}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax (7.5%)</span>
-                <span className="font-medium">₦{tax.toLocaleString()}</span>
-              </div>
+              
               <div className="border-t pt-3 mt-3">
                 <div className="flex justify-between">
                   <span className="text-lg font-medium">Total</span>

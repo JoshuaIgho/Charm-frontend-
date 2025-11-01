@@ -345,118 +345,118 @@ function App() {
   }, []);
 
   // Show loading screen while backend is waking up
-  if (backendStatus.checking) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '20px',
-        textAlign: 'center',
-        background: '#f9fafb'
-      }}>
-        <div style={{
-          width: '60px',
-          height: '60px',
-          border: '5px solid #e5e7eb',
-          borderTop: '5px solid #3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <h2 style={{ 
-          marginTop: '24px', 
-          fontSize: '24px', 
-          fontWeight: '600',
-          color: '#111827' 
-        }}>
-          Waking up backend...
-        </h2>
-        <p style={{ 
-          color: '#6b7280', 
-          maxWidth: '500px',
-          marginTop: '12px',
-          lineHeight: '1.6'
-        }}>
-          Our backend is hosted on Render's free tier and may take 30-60 seconds 
-          to wake up from sleep. Thank you for your patience! ☕
-        </p>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
-  }
+  // if (backendStatus.checking) {
+  //   return (
+  //     <div style={{
+  //       display: 'flex',
+  //       flexDirection: 'column',
+  //       alignItems: 'center',
+  //       justifyContent: 'center',
+  //       minHeight: '100vh',
+  //       padding: '20px',
+  //       textAlign: 'center',
+  //       background: '#f9fafb'
+  //     }}>
+  //       <div style={{
+  //         width: '60px',
+  //         height: '60px',
+  //         border: '5px solid #e5e7eb',
+  //         borderTop: '5px solid #3b82f6',
+  //         borderRadius: '50%',
+  //         animation: 'spin 1s linear infinite'
+  //       }} />
+  //       <h2 style={{ 
+  //         marginTop: '24px', 
+  //         fontSize: '24px', 
+  //         fontWeight: '600',
+  //         color: '#111827' 
+  //       }}>
+  //         Waking up backend...
+  //       </h2>
+  //       <p style={{ 
+  //         color: '#6b7280', 
+  //         maxWidth: '500px',
+  //         marginTop: '12px',
+  //         lineHeight: '1.6'
+  //       }}>
+  //         Our backend is hosted on Render's free tier and may take 30-60 seconds 
+  //         to wake up from sleep. Thank you for your patience! ☕
+  //       </p>
+  //       <style>{`
+  //         @keyframes spin {
+  //           0% { transform: rotate(0deg); }
+  //           100% { transform: rotate(360deg); }
+  //         }
+  //       `}</style>
+  //     </div>
+  //   );
+  // }
 
-  // Show error screen if backend failed to wake up
-  if (!backendStatus.ready && backendStatus.error) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '20px',
-        textAlign: 'center',
-        background: '#f9fafb'
-      }}>
-        <div style={{ 
-          fontSize: '48px', 
-          marginBottom: '16px' 
-        }}>
-          ⚠️
-        </div>
-        <h2 style={{ 
-          color: '#dc2626',
-          fontSize: '24px',
-          fontWeight: '600',
-          marginBottom: '12px'
-        }}>
-          Backend Connection Failed
-        </h2>
-        <p style={{ 
-          color: '#6b7280', 
-          maxWidth: '500px', 
-          margin: '0 0 24px 0',
-          lineHeight: '1.6'
-        }}>
-          {backendStatus.error}
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            padding: '12px 32px',
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: '500',
-            transition: 'background 0.2s'
-          }}
-          onMouseOver={(e) => e.target.style.background = '#2563eb'}
-          onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-        >
-          Retry Connection
-        </button>
-      </div>
-    );
-  }
+  // // Show error screen if backend failed to wake up
+  // if (!backendStatus.ready && backendStatus.error) {
+  //   return (
+  //     <div style={{
+  //       display: 'flex',
+  //       flexDirection: 'column',
+  //       alignItems: 'center',
+  //       justifyContent: 'center',
+  //       minHeight: '100vh',
+  //       padding: '20px',
+  //       textAlign: 'center',
+  //       background: '#f9fafb'
+  //     }}>
+  //       <div style={{ 
+  //         fontSize: '48px', 
+  //         marginBottom: '16px' 
+  //       }}>
+  //         ⚠️
+  //       </div>
+  //       <h2 style={{ 
+  //         color: '#dc2626',
+  //         fontSize: '24px',
+  //         fontWeight: '600',
+  //         marginBottom: '12px'
+  //       }}>
+  //         Backend Connection Failed
+  //       </h2>
+  //       <p style={{ 
+  //         color: '#6b7280', 
+  //         maxWidth: '500px', 
+  //         margin: '0 0 24px 0',
+  //         lineHeight: '1.6'
+  //       }}>
+  //         {backendStatus.error}
+  //       </p>
+  //       <button
+  //         onClick={() => window.location.reload()}
+  //         style={{
+  //           padding: '12px 32px',
+  //           background: '#3b82f6',
+  //           color: 'white',
+  //           border: 'none',
+  //           borderRadius: '8px',
+  //           cursor: 'pointer',
+  //           fontSize: '16px',
+  //           fontWeight: '500',
+  //           transition: 'background 0.2s'
+  //         }}
+  //         onMouseOver={(e) => e.target.style.background = '#2563eb'}
+  //         onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+  //       >
+  //         Retry Connection
+  //       </button>
+  //     </div>
+  //   );
+  // }
 
-  // Show app loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  // // Show app loading state
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+  //     </div>
+  //   );
+  // }
 
   // Main app render
   return (

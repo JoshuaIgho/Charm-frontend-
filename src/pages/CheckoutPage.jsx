@@ -62,8 +62,7 @@ const CheckoutPage = () => {
     0
   );
   const shipping = subtotal > 50000 ? 0 : 2500;
-  const tax = subtotal * 0.075;
-  const total = subtotal + shipping + tax;
+  const total = subtotal + shipping ;
 
   // Load saved addresses
   useEffect(() => {
@@ -1033,10 +1032,7 @@ const StripePaymentForm = ({ clientSecret, onSuccess, onClose }) => {
                     {shipping === 0 ? "FREE" : `₦${shipping.toLocaleString()}`}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tax (7.5%)</span>
-                  <span className="font-medium">₦{tax.toLocaleString()}</span>
-                </div>
+             
                 <div className="flex justify-between pt-3 border-t border-gray-200">
                   <span className="text-lg font-semibold text-gray-900">
                     Total

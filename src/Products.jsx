@@ -16,7 +16,6 @@ import { CardSkeleton, InlineLoading } from "./components/common/Loading";
 import ProductCard from "./components/customer/ProductCard";
 import ProductFilters from "./components/customer/ProductFilters";
 
-// API URL configuration - uses environment variable or falls back to localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const ProductList = memo(() => {
@@ -36,33 +35,30 @@ const ProductList = memo(() => {
     searchParams.get("search") || ""
   );
 
-  // Initialize filters from URL parameters
+  // ✅ FIXED: Match schema fields exactly
   const [filters, setFilters] = useState({
     category: searchParams.get("category") || "",
     minPrice: searchParams.get("minPrice") || "",
     maxPrice: searchParams.get("maxPrice") || "",
-    material: searchParams.get("material") || "",
-    onSale: searchParams.get("sale") === "true",
-    newArrivals: searchParams.get("new") === "true",
+    isOnSale: searchParams.get("sale") === "true",
+    isNewStock: searchParams.get("new") === "true",
   });
 
-  // Sync filters with URL parameters whenever URL changes
+  // ✅ FIXED: Sync with URL
   useEffect(() => {
     const urlCategory = searchParams.get("category") || "";
     const urlMinPrice = searchParams.get("minPrice") || "";
     const urlMaxPrice = searchParams.get("maxPrice") || "";
-    const urlMaterial = searchParams.get("material") || "";
-    const urlOnSale = searchParams.get("sale") === "true";
-    const urlNewArrivals = searchParams.get("new") === "true";
+    const urlIsOnSale = searchParams.get("sale") === "true";
+    const urlIsNewStock = searchParams.get("new") === "true";
     const urlSearch = searchParams.get("search") || "";
 
     setFilters({
       category: urlCategory,
       minPrice: urlMinPrice,
       maxPrice: urlMaxPrice,
-      material: urlMaterial,
-      onSale: urlOnSale,
-      newArrivals: urlNewArrivals,
+      isOnSale: urlIsOnSale,
+      isNewStock: urlIsNewStock,
     });
 
     setSearchQuery(urlSearch);
@@ -83,13 +79,61 @@ const ProductList = memo(() => {
     return sortOptions[sortValue] || { id: "desc" };
   }, []);
 
-  // Load products with GraphQL
+  // ✅ FIXED: Build where clause with proper price range filtering
+  const buildWhereClause = useCallback(() => {
+    const where = {};
+    const andConditions = [];
+
+    // Search by name
+    if (searchQuery) {
+      where.name = { contains: searchQuery, mode: 'insensitive' };
+    }
+
+    // Filter by category (using categoryType field from schema)
+    if (filters.category) {
+      where.categoryType = { equals: filters.category };
+    }
+
+    // Filter by price range - ✅ CRITICAL FIX: Use AND for proper range
+    if (filters.minPrice && filters.maxPrice) {
+      // Both min and max: need AND to get products BETWEEN the range
+      andConditions.push({ price: { gte: parseFloat(filters.minPrice) } });
+      andConditions.push({ price: { lte: parseFloat(filters.maxPrice) } });
+    } else if (filters.minPrice) {
+      // Only minimum: products >= minPrice
+      where.price = { gte: parseFloat(filters.minPrice) };
+    } else if (filters.maxPrice) {
+      // Only maximum: products <= maxPrice
+      where.price = { lte: parseFloat(filters.maxPrice) };
+    }
+
+    // Filter by sale status
+    if (filters.isOnSale) {
+      where.isOnSale = { equals: true };
+    }
+
+    // Filter by new arrivals
+    if (filters.isNewStock) {
+      where.isNewStock = { equals: true };
+    }
+
+    // Apply AND conditions if we have any
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
+    }
+
+    return where;
+  }, [searchQuery, filters]);
+
   const loadProducts = useCallback(async () => {
     console.log("Loading products from:", `${API_URL}/api/graphql`);
     setIsLoading(true);
     setError(null);
 
     try {
+      const whereClause = buildWhereClause();
+      console.log("GraphQL where clause:", JSON.stringify(whereClause, null, 2));
+
       const response = await fetch(`${API_URL}/api/graphql`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,14 +144,18 @@ const ProductList = memo(() => {
                 id
                 name
                 price
+                originalPrice
                 description
                 stock
                 image {
                   url
                 }
-                category {
-                  name
-                }
+                categoryType
+                isOnSale
+                isNewStock
+                isFeatured
+                averageRating
+                totalReviews
               }
               productsCount(where: $where)
             }
@@ -116,18 +164,7 @@ const ProductList = memo(() => {
             skip: (currentPage - 1) * productsPerPage,
             take: productsPerPage,
             orderBy: [getSortOption(sortBy)],
-            where: {
-              ...(searchQuery ? { name: { contains: searchQuery } } : {}),
-              ...(filters.category
-                ? { category: { name: { equals: filters.category } } }
-                : {}),
-              ...(filters.minPrice
-                ? { price: { gte: parseFloat(filters.minPrice) } }
-                : {}),
-              ...(filters.maxPrice
-                ? { price: { lte: parseFloat(filters.maxPrice) } }
-                : {}),
-            },
+            where: whereClause,
           },
         }),
       });
@@ -152,57 +189,11 @@ const ProductList = memo(() => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, sortBy, filters, searchQuery, getSortOption]);
+  }, [currentPage, sortBy, buildWhereClause, getSortOption]);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
-
-  // Update product stock in Keystone
-  const updateProductStockInKeystone = useCallback(
-    async (productId, newStock) => {
-      try {
-        console.log(`Updating product ${productId} stock to ${newStock}`);
-
-        const response = await fetch(`${API_URL}/api/graphql`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: `
-            mutation {
-              updateProduct(
-                where: { id: "${productId}" }
-                data: { stock: ${newStock} }
-              ) {
-                id
-                stock
-              }
-            }
-          `,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (result.errors) {
-          console.error("GraphQL errors:", result.errors);
-          throw new Error(
-            result.errors[0].message || "Failed to update product stock"
-          );
-        }
-
-        console.log(
-          "Product stock updated successfully:",
-          result.data.updateProduct
-        );
-        return result.data.updateProduct;
-      } catch (err) {
-        console.error("Error updating product stock:", err);
-        throw err;
-      }
-    },
-    []
-  );
 
   const handleSearch = useCallback(
     (e) => {
@@ -220,6 +211,7 @@ const ProductList = memo(() => {
     [searchQuery, searchParams, setSearchParams]
   );
 
+  // ✅ FIXED: Include all filter params in URL
   const handleFilterChange = useCallback(
     (newFilters) => {
       setFilters(newFilters);
@@ -229,9 +221,8 @@ const ProductList = memo(() => {
       if (newFilters.category) newParams.set("category", newFilters.category);
       if (newFilters.minPrice) newParams.set("minPrice", newFilters.minPrice);
       if (newFilters.maxPrice) newParams.set("maxPrice", newFilters.maxPrice);
-      if (newFilters.material) newParams.set("material", newFilters.material);
-      if (newFilters.onSale) newParams.set("sale", "true");
-      if (newFilters.newArrivals) newParams.set("new", "true");
+      if (newFilters.isOnSale) newParams.set("sale", "true");
+      if (newFilters.isNewStock) newParams.set("new", "true");
       if (searchQuery) newParams.set("search", searchQuery);
 
       setSearchParams(newParams);
@@ -244,26 +235,15 @@ const ProductList = memo(() => {
       category: "",
       minPrice: "",
       maxPrice: "",
-      material: "",
-      onSale: false,
-      newArrivals: false,
+      isOnSale: false,
+      isNewStock: false,
     });
     setSearchQuery("");
     setCurrentPage(1);
     setSearchParams({});
   }, [setSearchParams]);
 
-  const updateProductStock = useCallback((productId, newStock) => {
-    console.log(
-      `Updating local state for product ${productId} to stock ${newStock}`
-    );
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
-        product.id === productId ? { ...product, stock: newStock } : product
-      )
-    );
-  }, []);
-
+  // ✅ FIXED: Don't reduce stock when adding to cart - only reduce on confirmed purchase
   const handleAddToCart = useCallback(
     async (product) => {
       try {
@@ -279,23 +259,9 @@ const ProductList = memo(() => {
         const result = await addToCart(product);
         console.log(`Add to cart result:`, result);
 
+        // ✅ Stock remains unchanged - will only be reduced when order is confirmed
         if (result && result.success) {
-          const newStock = Math.max(0, product.stock - 1);
-          console.log(`New stock will be: ${newStock}`);
-
-          try {
-            console.log(`Updating stock in Keystone...`);
-            await updateProductStockInKeystone(product.id, newStock);
-            console.log(`Keystone update completed`);
-
-            console.log(`Updating local state...`);
-            updateProductStock(product.id, newStock);
-            console.log(`Local state updated`);
-            console.log(`Product ${product.name} stock updated successfully`);
-          } catch (error) {
-            console.error("Failed to update stock in Keystone:", error);
-            updateProductStock(product.id, newStock);
-          }
+          console.log(`✅ Product added to cart successfully (stock unchanged)`);
         }
 
         console.log(`=== ADD TO CART END ===`);
@@ -308,7 +274,7 @@ const ProductList = memo(() => {
         };
       }
     },
-    [addToCart, updateProductStock, updateProductStockInKeystone]
+    [addToCart]
   );
 
   const totalPages = Math.ceil(totalProducts / productsPerPage);
@@ -396,19 +362,6 @@ const ProductList = memo(() => {
                       <button
                         onClick={() =>
                           handleFilterChange({ ...filters, category: "" })
-                        }
-                        className="hover:text-primary-900"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  )}
-                  {filters.material && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 rounded-md text-xs sm:text-sm">
-                      {filters.material}
-                      <button
-                        onClick={() =>
-                          handleFilterChange({ ...filters, material: "" })
                         }
                         className="hover:text-primary-900"
                       >
