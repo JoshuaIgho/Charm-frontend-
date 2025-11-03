@@ -219,7 +219,7 @@ useEffect(() => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const productsRes = await fetch(API_URL, {
+      const productsRes = await fetch(VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,7 +230,7 @@ useEffect(() => {
       setProducts(productsData.data?.products || []);
       setCategories(productsData.data?.categories || []);
 
-      const ordersRes = await fetch(API_URL, {
+      const ordersRes = await fetch(VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -302,7 +302,7 @@ useEffect(() => {
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -338,7 +338,7 @@ useEffect(() => {
         ...(formData.categoryId && { category: { connect: { id: formData.categoryId } } })
       };
 
-      const response = await fetch(API_URL, {
+      const response = await fetch(VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -390,7 +390,7 @@ useEffect(() => {
     if (!editingOrder) return;
     setSubmitting(true);
     try {
-      const response = await fetch(API_URL,{
+      const response = await fetch(VITE_API_URL,{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
