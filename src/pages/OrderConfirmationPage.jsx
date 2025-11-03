@@ -127,17 +127,14 @@ const OrderConfirmationPage = () => {
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600">Subtotal</span>
                       <span className="font-medium">
-                        ₦{(order.totalAmount - (order.totalAmount * 0.075) - 2500).toLocaleString()}
+                        ₦{(order.totalAmount  - 2500).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600">Shipping</span>
                       <span className="font-medium">₦2,500</span>
                     </div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-600">Tax (7.5%)</span>
-                      <span className="font-medium">₦{(order.totalAmount * 0.075).toLocaleString()}</span>
-                    </div>
+                   
                     <div className="flex justify-between pt-2 border-t border-gray-200 mt-2">
                       <span className="font-semibold text-gray-900">Total</span>
                       <span className="font-bold text-primary-700">₦{order.totalAmount.toLocaleString()}</span>

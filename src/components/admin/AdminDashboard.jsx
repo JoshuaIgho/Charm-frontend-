@@ -219,7 +219,7 @@ useEffect(() => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const productsRes = await fetch('http://localhost:4000/api/graphql', {
+      const productsRes = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,7 +230,7 @@ useEffect(() => {
       setProducts(productsData.data?.products || []);
       setCategories(productsData.data?.categories || []);
 
-      const ordersRes = await fetch('http://localhost:4000/api/graphql', {
+      const ordersRes = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -302,7 +302,7 @@ useEffect(() => {
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      const response = await fetch('http://localhost:4000/api/graphql', {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -338,7 +338,7 @@ useEffect(() => {
         ...(formData.categoryId && { category: { connect: { id: formData.categoryId } } })
       };
 
-      const response = await fetch('http://localhost:4000/api/graphql', {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -378,7 +378,7 @@ useEffect(() => {
   const uploadProductImage = async (productId, file) => {
     const formData = new FormData();
     formData.append('image', file);
-    const response = await fetch(`http://localhost:4000/api/products/${productId}/upload-image`, {
+    const response = await fetch(`${VITE_GRAPHQL_URL}/api/products/${productId}/upload-image`, {
       method: 'POST',
       body: formData
     });
@@ -390,7 +390,7 @@ useEffect(() => {
     if (!editingOrder) return;
     setSubmitting(true);
     try {
-      const response = await fetch('http://localhost:4000/api/graphql', {
+      const response = await fetch(API_URL,{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
