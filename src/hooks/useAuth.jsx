@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
           }
         `;
 
-        const response = await fetch(API_URL, {
+          const response = await fetch(`${API_URL}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
