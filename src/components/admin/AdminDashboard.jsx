@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Package, ShoppingCart, Users, DollarSign, AlertTriangle, Plus, Edit, Trash2, X, Eye, MapPin, Phone, Mail, User, CheckCircle, XCircle, ZoomIn, Upload, Menu, ExternalLink, LogOut } from 'lucide-react';
 
+// Get API URLs from environment variables
+const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000/api/graphql';
+const REST_API_URL = import.meta.env.VITE_REST_API_URL || 'http://localhost:4000';
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -219,7 +223,7 @@ useEffect(() => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const productsRes = await fetch('http://localhost:4000/api/graphql', {
+      const productsRes = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,7 +234,7 @@ useEffect(() => {
       setProducts(productsData.data?.products || []);
       setCategories(productsData.data?.categories || []);
 
-      const ordersRes = await fetch('http://localhost:4000/api/graphql', {
+      const ordersRes = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -302,7 +306,7 @@ useEffect(() => {
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      const response = await fetch('http://localhost:4000/api/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -338,7 +342,7 @@ useEffect(() => {
         ...(formData.categoryId && { category: { connect: { id: formData.categoryId } } })
       };
 
-      const response = await fetch('http://localhost:4000/api/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -378,7 +382,7 @@ useEffect(() => {
   const uploadProductImage = async (productId, file) => {
     const formData = new FormData();
     formData.append('image', file);
-    const response = await fetch(`http://localhost:4000/api/products/${productId}/upload-image`, {
+    const response = await fetch(`${REST_API_URL}/api/products/${productId}/upload-image`, {
       method: 'POST',
       body: formData
     });
@@ -390,7 +394,7 @@ useEffect(() => {
     if (!editingOrder) return;
     setSubmitting(true);
     try {
-      const response = await fetch('http://localhost:4000/api/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

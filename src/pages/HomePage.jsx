@@ -427,7 +427,7 @@ useEffect(() => {
                   <div className="relative aspect-square overflow-hidden rounded-lg mb-2 sm:mb-3 md:mb-4 group">
                     <img
                       src={product.primaryImage?.url 
-                        // || product.images[0]?.url
+                        || product.images[0]?.url
                       }
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
