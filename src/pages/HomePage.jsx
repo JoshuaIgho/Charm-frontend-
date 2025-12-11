@@ -84,32 +84,37 @@ useEffect(() => {
     }
   };
 
-  const categories = [
-    {
-      name: "Rings",
-      path: "/products?category=rings",
-      image: "/images/categories/rings.jpg",
-      description: "Elegant rings for every occasion",
-    },
-    {
-      name: "Necklaces",
-      path: "/products?category=necklaces",
-      image: "/images/categories/necklaces.jpg",
-      description: "Beautiful necklaces that fit you",
-    },
-    {
-      name: "Earrings",
-      path: "/products?category=earrings",
-      image: "/images/categories/earrings.jpg",
-      description: "Stunning earrings for you",
-    },
-    {
-      name: "Bracelets",
-      path: "/products?category=bracelets",
-      image: "/images/categories/bracelets.jpg",
-      description: "Delicate bracelets for any wrist",
-    },
-  ];
+const categories = [
+  {
+    name: "Rings",
+    path: "/products?category=rings",
+    // Rose gold diamond rings on elegant purple/mauve background
+    image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&h=500&fit=crop&q=80",
+    description: "Elegant rings for every occasion",
+  },
+  {
+    name: "Necklaces",
+    path: "/products?category=necklaces",
+    // Gold layered necklaces with warm lighting
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&h=500&fit=crop&q=80",
+    description: "Beautiful necklaces that fit you",
+  },
+  {
+    name: "Earrings",
+    path: "/products?category=earrings",
+    // Elegant gold/rose gold drop earrings
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&h=500&fit=crop&q=80",
+    description: "Stunning earrings for you",
+  },
+  {
+    name: "Bracelets",
+    path: "/products?category=bracelets",
+    // Delicate gold bracelet on wrist with soft background
+    image: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=500&h=500&fit=crop&q=80",
+    description: "Delicate bracelets for any wrist",
+  },
+];
+
 
   const features = [
     {
@@ -327,7 +332,7 @@ useEffect(() => {
       <img
         src={
           product.primaryImage?.url || 
-          product.images?.[0]?.image?.url ||  
+          product.images?.[0]?.image?.url ||  // ✅ Updated path
           "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
         }
         alt={product.name}
@@ -426,9 +431,7 @@ useEffect(() => {
                 >
                   <div className="relative aspect-square overflow-hidden rounded-lg mb-2 sm:mb-3 md:mb-4 group">
                     <img
-                      src={product.primaryImage?.url 
-                        || product.images[0]?.url
-                      }
+                      src={product.primaryImage?.url || product.images[0]?.url}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
